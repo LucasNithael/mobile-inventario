@@ -1,4 +1,3 @@
-using System;
 using FluentValidation;
 using inventario_api.Data;
 using inventario_api.DTOs;
@@ -9,16 +8,19 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ======================
+// 🔹 SERVICES
+// ======================
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
-// Configurar SQLite
+// Swagger clássico
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// SQLite
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 
 // Services
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -38,13 +40,27 @@ builder.Services.AddScoped<IValidator<MovementInput>, MovementInputValidator>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapSwaggerUI();
-}
+// ======================
+// 🔹 IMPORTANTE (IIS)
+// ======================
 
+// Se estiver publicado em /inventario no IIS
+app.UsePathBase("/inventario");
+
+// ======================
+// 🔹 PIPELINE
+// ======================
+
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
+{
+    app.UseSwagger();
+
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/inventario/swagger/v1/swagger.json", "Inventario API v1");
+        c.RoutePrefix = "swagger"; // acessa via /inventario/swagger
+    });
+}
 
 app.UseHttpsRedirection();
 
